@@ -5,6 +5,7 @@ const { join } = require("node:path");
 const vm = require("node:vm");
 const Payroll = require("../dist/payroll.js");
 const locales = require("../dist/locales.js");
+const ArcadeRewards = require("../dist/rewards.js");
 
 const read = file => readFileSync(join(__dirname, "../dist", file), "utf8");
 const ids = [...read("index.html").matchAll(/\bid="([^"]+)"/g)].map(match => match[1]);
@@ -44,12 +45,13 @@ function visit(url, storage) {
     querySelectorAll: selector => selector === "[id]" ? Object.values(nodes) : [],
   });
   const context = {
-    location, URL, document, window: new EventTarget(), Payroll,
+    location, URL, document, window: new EventTarget(), Payroll, ArcadeRewards,
     ArcadeLocale: { get: locales.get, apply() {} },
     localStorage: { getItem: key => storage.get(key) ?? null, setItem: (key, value) => storage.set(key, value) },
     matchMedia: () => new EventTarget(), Pixels: { draw() {} },
     requestAnimationFrame() {}, cancelAnimationFrame() {}, clearInterval() {},
     mountPinnedCompanion: () => ({ prime() {} }), mountLeavePlanner: () => () => {},
+    mountCollection: () => ({ update() {}, open() {} }),
   };
   const { region, destination } = vm.runInNewContext(scripts + "\nDestinations", context);
   function choose(button, code) {

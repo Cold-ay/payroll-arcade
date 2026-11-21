@@ -108,7 +108,7 @@ const ArcadeLocale = (() => {
     ["開新一更", "開始新班次", "New shift"],
     ["繼續計薪", "繼續計薪", "Resume"],
     ["全部成就已解鎖", "所有成就已解鎖", "All goals unlocked"],
-    ["打工圖鑑，全收集！", "薪水圖鑑，全收集！", "Collection complete!"],
+    ["揀件道具入袋啦！", "挑件道具放進袋子吧！", "Pick a reward for your bag!"],
     ["已解鎖", "已解鎖", "Unlocked"],
     ["已累積", "已累積", "Earned so far"],
     ["解鎖成就！", "解鎖成就！", "Achievement unlocked! "],
@@ -164,9 +164,15 @@ const ArcadeLocale = (() => {
       currency: "HKD", symbol: "HK$", sampleSalary: 24000, teaPrice: 20, buyingIcon: "tea",
       buyingPower: ["今更奶茶購買力", "杯", "以每杯 HK$20 試算", "歷來累積每過一關，自動解鎖一個成就。奶茶購買力以每杯 HK$20 試算。"],
       goals: [
-        [1, "第一蚊入袋", "brand"], [20, "凍奶茶自由", "tea"], [30, "街角雞蛋仔", "waffles"], [55, "兩餸飯自由", "meal"],
-        [100, "紅衫魚入袋", "fish"], [300, "放工打邊爐", "pot"], [500, "大牛報到", "cash"],
-        [1000, "金牛捕獲", "stash"], [10000, "萬元打工傳說", "trophy"],
+        ["first-coin", 1, "第一蚊入袋", "brand", "貓爪一蚊銀", "paw-coin"],
+        ["milk-tea", 20, "凍奶茶自由", "tea", "茶記凍奶茶"],
+        ["egg-waffle", 30, "街角雞蛋仔", "waffles", "熱辣辣雞蛋仔"],
+        ["two-dish-rice", 55, "兩餸飯自由", "meal", "叉燒滑蛋兩餸飯"],
+        ["red-fish", 100, "紅衫魚入袋", "fish", "紅衫魚布偶", "plush-fish"],
+        ["hot-pot", 300, "放工打邊爐", "pot", "迷你鴛鴦鍋"],
+        ["big-ox", 500, "大牛報到", "cash", "大牛鎖匙扣", "ox-charm"],
+        ["golden-ox", 1000, "金牛捕獲", "stash", "金牛錢罌", "ox-bank"],
+        ["arcade-trophy", 10000, "萬元打工傳說", "trophy", "金鍵盤獎盃"],
       ],
       channels: [
         ["「鍵盤一響，黃金萬兩。」", "戴黑超嘅橘貓左右手輪流敲鍵盤。"],
@@ -184,9 +190,14 @@ const ArcadeLocale = (() => {
       },
       buyingPower: ["今更葡撻購買力", "個", "以每個 MOP$12 試算", "歷來累積每過一關，自動解鎖一個澳門成就。葡撻購買力以每個 MOP$12 試算。"],
       goals: [
-        [1, "第一蚊入袋", "brand"], [12, "出爐葡撻", "tart"], [35, "氹仔豬扒包", "meal"],
-        [80, "杏仁餅手信", "stash"], [180, "葡國菜開枱", "pot"], [400, "路環放空基金", "cash"],
-        [1000, "澳門半島食勻一圈", "fish"], [8000, "大三巴打工傳說", "trophy"],
+        ["first-coin", 1, "第一蚊入袋", "brand", "貓爪一蚊銀", "paw-coin"],
+        ["egg-tart", 12, "出爐葡撻", "tart", "焦糖脆面葡撻"],
+        ["pork-chop-bun", 35, "氹仔豬扒包", "meal", "氹仔豬扒包", "chop-bun"],
+        ["almond-cookies", 80, "杏仁餅手信", "stash", "迷你杏仁餅鐵盒", "cookie-tin"],
+        ["portuguese-chicken", 180, "葡國菜開枱", "pot", "焗葡國雞"],
+        ["coloane-postcard", 400, "路環放空基金", "cash", "路環海邊明信片", "postcard"],
+        ["snack-map", 1000, "澳門半島食勻一圈", "fish", "貓仔掃街地圖", "snack-map"],
+        ["st-pauls-trophy", 8000, "大三巴打工傳說", "trophy", "大三巴貓爪獎座"],
       ],
       channels: [
         ["「大三巴打卡，我打鍵盤。」", "大三巴牌坊前，戴黑超嘅橘貓輪流郁兩隻爪打字。"],
@@ -200,9 +211,14 @@ const ArcadeLocale = (() => {
       currency: "TWD", symbol: "NT$", sampleSalary: 50000, teaPrice: 60, buyingIcon: "boba",
       buyingPower: ["本班珍奶購買力", "杯", "以每杯 NT$60 試算", "每跨過一個累積收入目標，就能解鎖一項台灣成就。珍奶購買力以每杯 NT$60 試算。"],
       goals: [
-        [1, "第一塊入袋", "brand"], [40, "早餐店蛋餅", "meal"], [60, "珍珠奶茶自由", "boba"],
-        [100, "夜市雞排加辣", "meal"], [200, "牛肉麵加滷蛋", "pot"], [600, "火鍋揪團基金", "cash"],
-        [1500, "週末台北小旅行", "stash"], [10100, "台北 101 級薪水貓", "trophy"],
+        ["first-coin", 1, "第一塊入袋", "brand", "貓掌一元硬幣", "paw-coin"],
+        ["egg-crepe", 40, "早餐店蛋餅", "meal", "起司蛋餅", "crepe-roll"],
+        ["bubble-tea", 60, "珍珠奶茶自由", "boba", "半糖少冰珍奶"],
+        ["fried-chicken", 100, "夜市雞排加辣", "meal", "辣粉大雞排", "cutlet"],
+        ["beef-noodles", 200, "牛肉麵加滷蛋", "pot", "紅燒牛肉麵加蛋", "noodles"],
+        ["hot-pot", 600, "火鍋揪團基金", "cash", "貓掌造型火鍋料", "paw-cake"],
+        ["taipei-postcard", 1500, "週末台北小旅行", "stash", "台北旅行明信片", "postcard"],
+        ["taipei-trophy", 10100, "台北 101 級薪水貓", "trophy", "台北 101 貓掌獎座"],
       ],
       channels: [
         ["「敲完這一行，珍奶多一顆珍珠。」", "戴墨鏡的橘貓輪流用兩隻爪子打字，背後是台北 101。"],
@@ -217,9 +233,14 @@ const ArcadeLocale = (() => {
       overrides: { "PAYROLL ARCADE": "NEW YORK" },
       buyingPower: ["Deli coffee fund", "cups", "Estimated at $3 per cup", "Your all-time earnings unlock New York milestones. The coffee counter uses $3 a cup as a playful estimate."],
       goals: [
-        [1, "First buck", "brand"], [3, "Corner deli coffee", "coffee"], [5, "Pizza slice fund", "slice"],
-        [12, "Bagel with the works", "meal"], [30, "Ballpark snack run", "fish"], [100, "Dinner in the city", "pot"],
-        [250, "Broadway night fund", "stash"], [1000, "Four-figure cat", "trophy"],
+        ["first-dollar", 1, "First buck", "brand", "Lucky cat dollar", "cash"],
+        ["deli-coffee", 3, "Corner deli coffee", "coffee", "Blue deli coffee cup", "blue-coffee"],
+        ["pizza-slice", 5, "Pizza slice fund", "slice", "Folded cheese slice"],
+        ["everything-bagel", 12, "Bagel with the works", "meal", "Everything bagel", "bagel"],
+        ["ballpark-pretzel", 30, "Ballpark snack run", "fish", "Ballpark pretzel", "pretzel"],
+        ["diner-burger", 100, "Dinner in the city", "pot", "Double diner burger", "burger"],
+        ["broadway-playbill", 250, "Broadway night fund", "stash", "Paw-signed playbill", "playbill"],
+        ["golden-paw", 1000, "Four-figure cat", "trophy", "Golden Paw trophy"],
       ],
       channels: [
         ["“Lady Liberty has a torch. I have a keyboard.”", "A sunglasses-wearing orange cat types in front of New York Harbor and the Statue of Liberty."],
@@ -230,9 +251,60 @@ const ArcadeLocale = (() => {
     },
   };
 
+  function collectionCopy(code, symbol) {
+    const number = new Intl.NumberFormat(code, { maximumFractionDigits: 0 });
+    const format = n => number.format(n);
+    if (code === "en-US") {
+      const points = n => format(n) + (n === 1 ? " point" : " points");
+      return {
+        title: "Achievements & loot", book: "Achievements", bag: "Loot bag", shortcut: "Loot bag",
+        balance: "Available points", unlocked: "Unlocked", collected: "Items in bag",
+        redeem: "Redeem", locked: "Locked", pending: "Redeeming…", loading: "Opening loot bag…",
+        rules: "Every $1 earned adds 1 game point. Unlock an achievement, then spend points to collect its virtual item.",
+        demo: "Demo collection", empty: "Your bag is empty. Redeem your first item in Achievements.",
+        unavailable: "Your browser couldn’t save or open the loot bag. Please try again.",
+        profileChanged: "Your pay profile changed. Check your points and try again.",
+        insufficient: "Keep earning points for this item.",
+        points, cost: points,
+        unlockedCount: (n, total) => format(n) + " / " + format(total) + " unlocked",
+        bagCount: n => format(n) + (n === 1 ? " item" : " items"),
+        owned: n => format(n) + " in bag",
+        received: item => "+1 " + item + "! Added to your loot bag.",
+        redeemItem: item => "Redeem " + item,
+        need: n => points(n) + " to go",
+        unlockAt: salary => "Unlocks at " + salary,
+      };
+    }
+    const taiwan = code === "zh-TW";
+    const points = n => format(n) + " 點";
+    return {
+      title: taiwan ? "成就與道具" : "成就同道具", book: "成就簿", bag: "道具袋", shortcut: "成就道具袋",
+      balance: "可用點數", unlocked: "已解鎖", collected: "袋內道具",
+      redeem: "兌換", locked: "未解鎖", pending: taiwan ? "兌換中…" : "換緊…",
+      loading: taiwan ? "正在打開道具袋…" : "開緊道具袋…",
+      rules: taiwan
+        ? "每賺 " + symbol + "1 就得到 1 點遊戲點數。解鎖成就後，可以用點數兌換對應的虛擬道具。"
+        : "每賺 " + symbol + "1 就有 1 點遊戲點數。解鎖成就之後，可以用點數換嗰件虛擬道具。",
+      demo: "試玩收藏",
+      empty: taiwan ? "道具袋還是空的。到成就簿換第一件道具吧！" : "個袋仲係空嘅。去成就簿換件道具啦！",
+      unavailable: taiwan ? "瀏覽器暫時無法存取道具袋，請再試一次。" : "瀏覽器暫時讀寫唔到道具袋，請再試一次。",
+      profileChanged: taiwan ? "已切換薪資紀錄，請確認點數後再兌換。" : "已經切換咗計薪紀錄，睇一睇點數再換啦。",
+      insufficient: taiwan ? "存夠點數就能兌換這件道具。" : "儲夠點數就可以換呢件道具。",
+      points, cost: points,
+      unlockedCount: (n, total) => "已解鎖 " + format(n) + " / " + format(total),
+      bagCount: n => format(n) + " 件道具",
+      owned: n => "持有 " + format(n) + " 件",
+      received: item => item + (taiwan ? " +1！已放進道具袋。" : " +1！已經入袋。"),
+      redeemItem: item => "兌換" + item,
+      need: n => (taiwan ? "再存 " : "再儲 ") + points(n),
+      unlockAt: salary => (taiwan ? "累積 " : "儲到 ") + salary + " 解鎖",
+    };
+  }
+
   const regions = Object.fromEntries(Object.entries(data).map(([code, definition]) => {
     const { buyingPower, overrides, ...settings } = definition;
-    const goals = settings.goals.map(([value, name, icon]) => ({ value, name, icon }));
+    // Keep IDs stable across copy and artwork edits. The item bag stores these IDs.
+    const goals = settings.goals.map(([id, value, name, icon, item, itemIcon = icon]) => ({ id, value, name, icon, item, itemIcon }));
     const channels = settings.channels.map(([quote, alt]) => ({ quote, alt }));
     const regional = new Map(Object.entries(overrides || {}));
     data["zh-HK"].buyingPower.forEach((key, i) => regional.set(key, buyingPower[i]));
@@ -251,7 +323,7 @@ const ArcadeLocale = (() => {
       "試玩月薪 " + sample + " · 每月 22 " + (code === "zh-TW" ? "天" : "日") + " · 每日 8 小時";
     regional.set("試玩月薪 HK$24,000 · 每月 22 日 · 每日 8 小時", example);
     return [code, {
-      ...settings, code, goals, channels,
+      ...settings, code, goals, channels, collection: collectionCopy(code, settings.symbol),
       t(source) { return regional.get(source) ?? phrases[source]?.[code] ?? source; },
     }];
   }));

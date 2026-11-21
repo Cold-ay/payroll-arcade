@@ -14,6 +14,8 @@
   <script defer src="destinations.js"></script>
   <script defer src="leave.js"></script>
   <script defer src="pin.js"></script>
+  <script defer src="rewards.js"></script>
+  <script defer src="collection.js"></script>
   <script defer src="app.js"></script>
 </head>
 <body>
@@ -47,7 +49,12 @@
         <h1>打工人出糧台<span class="title-cursor" aria-hidden="true"></span></h1>
         <p>你同貓各有一個鍵盤。望返過嚟，又賺多咗少少。</p>
       </div>
-      <time id="today" class="today"><canvas data-pixel="calendar" aria-hidden="true"></canvas><span></span></time>
+      <div class="intro-tools">
+        <time id="today" class="today"><canvas data-pixel="calendar" aria-hidden="true"></canvas><span></span></time>
+        <button type="button" class="collection-launch" id="collection-shortcut" aria-haspopup="dialog" aria-controls="milestones">
+          <canvas data-pixel="bag" aria-hidden="true"></canvas><span id="collection-shortcut-label">成就道具袋</span>
+        </button>
+      </div>
     </div>
 
     <div class="hero-grid">
@@ -144,7 +151,7 @@
       <section class="panel milestone-panel" aria-labelledby="milestones-title">
         <div class="panel-title">
           <h2 id="milestones-title"><canvas data-pixel="trophy" aria-hidden="true"></canvas>出糧里程碑</h2>
-          <button type="button" class="text-button" id="milestones-button">睇晒成就</button>
+          <div class="milestone-actions"><span id="dashboard-unlocked"></span><button type="button" class="text-button" id="milestones-button" aria-haspopup="dialog" aria-controls="milestones">睇晒成就</button></div>
         </div>
         <div class="milestone-details">
           <span class="milestone-icon"><canvas id="next-art" data-pixel="pot" aria-hidden="true"></canvas></span>
@@ -206,10 +213,30 @@
     <div class="dialog-buttons"><button type="button" class="action-secondary" data-close>返多陣</button><button type="button" class="action-primary" id="confirm-finish">確認收工</button></div>
   </dialog>
 
-  <dialog class="dialog" id="milestones" aria-labelledby="all-goals-title">
-    <div class="dialog-head"><h2 id="all-goals-title"><canvas data-pixel="trophy" aria-hidden="true"></canvas>出糧成就簿</h2><button type="button" class="icon-button" data-close aria-label="關閉成就簿"><canvas data-pixel="cross" aria-hidden="true"></canvas></button></div>
-    <p class="dialog-copy">歷來累積每過一關，自動解鎖一個成就。奶茶購買力以每杯 HK$20 試算。</p>
-    <ol id="goal-list" class="goal-list"></ol>
+  <dialog class="dialog collection-dialog" id="milestones" aria-labelledby="collection-title">
+    <div class="dialog-head collection-head">
+      <div class="collection-heading">
+        <span class="bag-emblem"><canvas data-pixel="bag" aria-hidden="true"></canvas></span>
+        <div><h2 id="collection-title">成就道具袋</h2><span id="collection-account"></span></div>
+      </div>
+      <button type="button" class="icon-button" data-close aria-label="關閉成就簿"><canvas data-pixel="cross" aria-hidden="true"></canvas></button>
+    </div>
+    <div class="collection-summary">
+      <div class="points-tile"><span id="points-label"></span><strong id="collection-points">—</strong></div>
+      <div><span id="unlocked-label"></span><strong id="collection-unlocked">—</strong></div>
+      <div><span id="items-label"></span><strong id="collection-items">—</strong></div>
+    </div>
+    <p id="collection-rule"></p>
+    <div class="collection-tabs" role="tablist" aria-labelledby="collection-title">
+      <button type="button" id="catalog-tab" role="tab" aria-selected="true" aria-controls="catalog-panel"></button>
+      <button type="button" id="bag-tab" role="tab" aria-selected="false" aria-controls="bag-panel" tabindex="-1"></button>
+    </div>
+    <div id="catalog-panel" class="collection-panel" role="tabpanel" aria-labelledby="catalog-tab"><ol id="goal-list" class="reward-catalog"></ol></div>
+    <div id="bag-panel" class="collection-panel" role="tabpanel" aria-labelledby="bag-tab" hidden>
+      <p id="bag-empty"></p>
+      <ul id="bag-items" class="bag-grid"></ul>
+    </div>
+    <p id="reward-feedback" role="status" aria-live="polite" aria-atomic="true"></p>
   </dialog>
 
   <dialog class="boss-sheet" id="boss-sheet" aria-labelledby="sheet-title">

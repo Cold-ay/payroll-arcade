@@ -68,7 +68,18 @@
   if (!usableStorage) $("privacy").lastElementChild.textContent = t("資料暫存喺呢個分頁");
   const refreshLeave = mountLeavePlanner(() => state.pay, readKey, writeKey, cash, region, ledgerKey("payroll-arcade.leave.v1"));
 
-  const goalCount = total => goals.filter(goal => total >= goal.value).length;
+  const collection = mountCollection(region, () => ({
+    demo: state.demo,
+    total: Payroll.snapshot(state, Date.now()).total,
+  }), demo => {
+    // Re-read inside the bag transaction: another tab may have begun a personal shift.
+    const current = usableStorage ? readState() : state;
+    return current?.demo === demo ? Payroll.snapshot(current, Date.now()).total : null;
+  }, () => chime("unlock"));
+  const goalCount = total => {
+    const points = ArcadeRewards.wholePoints(total);
+    return goals.filter(goal => points >= goal.value).length;
+  };
   let previousGoal = goalCount(Payroll.snapshot(state, Date.now()).total);
   function text(id, value) {
     const el = nodes[id];
@@ -216,7 +227,7 @@
     text("goal-tag", t(done ? "全部成就已解鎖" : "下個解鎖目標"));
     text("goal-name", next.name);
     text("goal-amount", region.symbol + grouped.format(next.value));
-    text("remaining", done ? t("打工圖鑑，全收集！") : t("已累積") + " " + cash(total));
+    text("remaining", done ? t("揀件道具入袋啦！") : t("已累積") + " " + cash(total));
     text("progress-pct", percent + "%");
     if ($("goal-progress").getAttribute("aria-valuenow") !== String(percent)) {
       $("goal-progress").setAttribute("aria-valuenow", percent);
@@ -228,31 +239,8 @@
       burst("cash", 13);
       chime("unlock");
     }
-    if ($("milestones").open && (count !== previousGoal || !$("goal-list").children.length)) showGoalList(count);
+    collection.update(total, state.demo);
     previousGoal = count;
-  }
-  function showGoalList(count) {
-    const list = $("goal-list");
-    list.replaceChildren();
-    goals.forEach((goal, index) => {
-      const item = document.createElement("li");
-      const art = document.createElement("canvas");
-      const desc = document.createElement("span");
-      const price = document.createElement("small");
-      const status = document.createElement("span");
-      art.setAttribute("aria-hidden", "true");
-      desc.className = "goal-desc";
-      desc.textContent = goal.name;
-      price.textContent = region.symbol + grouped.format(goal.value);
-      desc.append(price);
-      const unlocked = index < count;
-      item.className = unlocked ? "unlocked" : "locked";
-      status.className = "goal-status";
-      status.textContent = t(unlocked ? "已解鎖" : "未解鎖");
-      item.append(art, desc, status);
-      list.append(item);
-      Pixels.draw(art, goal.icon);
-    });
   }
 
   function openSettings() {
@@ -298,10 +286,6 @@
     const amount = cash(state.earned);
     notify(regional(`收工！今更袋咗 ${amount}。`, `下班啦！這班賺了 ${amount}。`, `Clocked out! You earned ${amount} this shift.`));
     chime("unlock");
-  });
-  $("milestones-button").addEventListener("click", () => {
-    showGoalList(goalCount(Payroll.snapshot(state, Date.now()).total));
-    $("milestones").showModal();
   });
   for (const button of document.querySelectorAll("[data-close]")) button.addEventListener("click", () => button.closest("dialog").close());
   for (const dialog of document.querySelectorAll(".dialog")) {
@@ -497,4 +481,5 @@
   updateSoundButton();
   applyCompanion();
   adopt(state);
+  if (location.hash === "#collection") collection.open("catalog");
 })();
