@@ -1,13 +1,15 @@
 /* Both native PiP APIs show the same locally drawn cat and payroll clock. */
-function mountPinnedCompanion(readShift, motionEnabled) {
+function mountPinnedCompanion(readShift, motionEnabled, region, destination) {
   "use strict";
   const button = document.getElementById("popout-button");
   const label = document.getElementById("pin-label");
   const help = document.getElementById("pin-help");
   const retry = document.getElementById("retry-pin-video");
-  const money = new Intl.NumberFormat("en-HK", { maximumFractionDigits: 0 });
+  const t = source => region.t(source);
+  const money = new Intl.NumberFormat(region.code, { maximumFractionDigits: 0 });
   const poster = new Image(), atlas = new Image();
-  const width = 800, height = 300, artWidth = 272;
+  const showCity = destination.code !== "zh-HK";
+  const width = 800, height = 300, artWidth = showCity ? 310 : 272;
   const sans = '"PingFang HK", "PingFang TC", system-ui, sans-serif';
   const mono = 'ui-monospace, Menlo, Consolas, monospace';
   const testVideo = document.createElement("video");
@@ -23,8 +25,8 @@ function mountPinnedCompanion(readShift, motionEnabled) {
   function loadArt() {
     if (artRequested) return;
     artRequested = true;
-    poster.src = "assets/cat-keyboard.jpg";
-    atlas.src = "assets/typing-frames.jpg";
+    poster.src = destination.poster;
+    atlas.src = destination.atlas;
   }
   function canvasIn(doc) {
     const canvas = doc.createElement("canvas");
@@ -45,21 +47,36 @@ function mountPinnedCompanion(readShift, motionEnabled) {
     if (art.complete && art.naturalWidth) {
       const w = art.naturalWidth / (useAtlas ? 8 : 1);
       const h = art.naturalHeight / (useAtlas ? 4 : 1);
-      const crop = h * artWidth / height;
+      // Show the whole regional postcard so both the cat and landmark survive a narrow window.
+      const crop = showCity ? w : h * artWidth / height;
+      const imageHeight = showCity ? artWidth * h / w : height;
       const x = (useAtlas ? cell % 8 * w : 0) + (w - crop) * .52;
       const y = useAtlas ? Math.floor(cell / 8) * h : 0;
       ctx.imageSmoothingEnabled = false;
-      ctx.drawImage(art, x, y, crop, h, 0, 0, artWidth, height);
+      ctx.drawImage(art, x, y, crop, h, 0, 0, artWidth, imageHeight);
+      if (showCity) {
+        ctx.fillStyle = "#251b32";
+        ctx.fillRect(0, imageHeight, artWidth, height - imageHeight);
+        ctx.fillStyle = "#f1e8ff";
+        ctx.font = "700 34px " + sans;
+        ctx.textAlign = "center";
+        ctx.textBaseline = "middle";
+        ctx.fillText(destination.city, artWidth / 2, (height + imageHeight) / 2, artWidth - 16);
+        ctx.textBaseline = "alphabetic";
+        ctx.textAlign = "left";
+      }
     }
     ctx.fillStyle = "#a482bf";
     ctx.fillRect(artWidth, 0, 3, height);
     const x = artWidth + 25, room = width - x - 21;
     ctx.fillStyle = "#e1ead8";
     ctx.font = "700 32px " + sans;
-    ctx.fillText("今更已賺", x, 57);
+    ctx.fillText(t("今更已賺"), x, 57, room - 100);
     ctx.font = "600 25px " + mono;
     ctx.fillStyle = "#afbea4";
-    ctx.fillText("HK$", x + 154, 56);
+    ctx.textAlign = "right";
+    ctx.fillText(region.symbol, width - 21, 56);
+    ctx.textAlign = "left";
     const [integer, fraction] = shift.earned.toFixed(6).split(".");
     const major = money.format(Number(integer)) + "." + fraction.slice(0, 2);
     const minor = fraction.slice(2);
@@ -76,11 +93,11 @@ function mountPinnedCompanion(readShift, motionEnabled) {
     ctx.fillStyle = "#3d4b37";
     ctx.fillRect(x, 207, room, 2);
     const live = shift.status === "running";
-    const status = (shift.demo ? "試玩" : "") + (live ? "計薪中" : shift.status === "finished" ? "已收工" : "已暫停");
+    const status = (shift.demo ? t("試玩") : "") + t(live ? "計薪中" : shift.status === "finished" ? "已收工" : "已暫停");
     ctx.fillStyle = live ? "#b8eb75" : "#bbc2b3";
     ctx.fillRect(x, 244, 12, 12);
     ctx.font = "650 25px " + sans;
-    ctx.fillText(status, x + 23, 260);
+    ctx.fillText(status, x + 23, 260, room - 166);
     const secs = Math.floor(shift.elapsed / 1000);
     const clock = [Math.floor(secs / 3600), Math.floor(secs / 60) % 60, secs % 60].map(n => String(n).padStart(2, "0")).join(":");
     ctx.font = "650 27px " + mono;
@@ -88,15 +105,15 @@ function mountPinnedCompanion(readShift, motionEnabled) {
     ctx.textAlign = "right";
     ctx.fillText(clock, width - 21, 260);
     ctx.textAlign = "left";
-    return status + "，今更已賺港幣 " + shift.earned.toFixed(2);
+    return status + " · " + t("今更已賺") + " " + region.symbol + shift.earned.toFixed(2);
   }
   function reflect() {
-    label.textContent = floating ? "收起置頂窗" : "置頂小窗";
+    label.textContent = t(floating ? "收起置頂窗" : "置頂小窗");
     button.setAttribute("aria-pressed", String(Boolean(floating)));
     button.disabled = opening;
   }
   function explain(message, allowRetry) {
-    document.getElementById("pin-help-message").textContent = message;
+    document.getElementById("pin-help-message").textContent = t(message);
     retry.hidden = !allowRetry;
     if (!help.open) help.showModal();
   }
@@ -171,7 +188,7 @@ function mountPinnedCompanion(readShift, motionEnabled) {
     const win = await docPip.requestWindow({ width: 340, height: 136 });
     try {
       const doc = win.document;
-      doc.documentElement.lang = "zh-HK"; doc.title = "出糧街機 · 置頂陪工";
+      doc.documentElement.lang = region.code; doc.title = t("出糧街機 · 置頂陪工");
       const style = doc.createElement("style");
       style.textContent = "html,body{margin:0;overflow:hidden;background:#151d14;color-scheme:dark}canvas{display:block;position:fixed;inset:0;width:100vw;height:100dvh;object-fit:contain}";
       doc.head.append(style);

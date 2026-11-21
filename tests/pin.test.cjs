@@ -16,7 +16,8 @@ class UIElement extends EventTarget {
   showModal() { this.open = true; }
 }
 
-function setup(supportsDocumentPiP) {
+function setup(supportsDocumentPiP, region = { code: "zh-HK", symbol: "HK$", t: text => text },
+  destination = { code: "zh-HK", poster: "keyboard.jpg", atlas: "typing.jpg", city: "香港" }) {
   const elements = new Map();
   const document = {
     createElement: () => new UIElement(),
@@ -29,9 +30,10 @@ function setup(supportsDocumentPiP) {
   const child = new EventTarget();
   const canvas = new UIElement();
   const frames = [];
+  const painted = [];
   const context = {
-    fillRect() {}, fillText() {}, measureText: text => ({ width: text.length * 10 }),
-    drawImage: (_img, sx, sy) => frames.push([sx, sy]),
+    fillRect() {}, fillText: text => painted.push(text), measureText: text => ({ width: text.length * 10 }),
+    drawImage: (img, sx, sy) => frames.push([sx, sy, img.src]),
   };
   canvas.getContext = () => context;
   child.document = {
@@ -49,9 +51,9 @@ function setup(supportsDocumentPiP) {
   const mount = vm.runInNewContext(source + "\nmountPinnedCompanion", {
     window, document, Date: { now: () => now }, performance: { now: () => now }, Image: Art, HTMLCanvasElement: class {},
   });
-  const pin = mount(at => ({ ...Payroll.snapshot(state, at), status: state.status, demo: false }), () => true);
+  const pin = mount(at => ({ ...Payroll.snapshot(state, at), status: state.status, demo: false }), () => true, region, destination);
   return {
-    elements, canvas, frames, pin, dismissFromOS: () => child.close(),
+    elements, canvas, frames, pin, painted, child, dismissFromOS: () => child.close(),
     click: () => document.getElementById("popout-button").dispatchEvent(new Event("click")),
     advance(ms) { now += ms; if (repaint) repaint(); },
     pause() { Object.assign(state, Payroll.changeStatus(state, now, "paused")); },
@@ -65,17 +67,17 @@ test("the floating window paints elapsed pay and typing frames independently of 
   await new Promise(setImmediate);
   const button = ui.elements.get("popout-button");
   assert.equal(button.attributes["aria-pressed"], "true");
-  assert.match(ui.canvas.attributes["aria-label"], /今更已賺港幣 0\.00$/);
+  assert.match(ui.canvas.attributes["aria-label"], /今更已賺 HK\$0\.00$/);
   const firstFrame = ui.frames.at(-1);
   ui.advance(3600125);
-  assert.match(ui.canvas.attributes["aria-label"], /計薪中，今更已賺港幣 100\.00$/);
+  assert.match(ui.canvas.attributes["aria-label"], /計薪中 · 今更已賺 HK\$100\.00$/);
   assert.notDeepEqual(ui.frames.at(-1), firstFrame);
   ui.pause();
   ui.advance(2000);
   const pausedFrame = ui.frames.at(-1);
   ui.advance(2200);
   assert.deepEqual(ui.frames.at(-1), pausedFrame);
-  assert.match(ui.canvas.attributes["aria-label"], /已暫停，今更已賺港幣 100\.00$/);
+  assert.match(ui.canvas.attributes["aria-label"], /已暫停 · 今更已賺 HK\$100\.00$/);
   await ui.pin.close();
   assert.equal(button.attributes["aria-pressed"], "false");
   assert.equal(Boolean(ui.elements.get("pin-help").open), false);
@@ -100,4 +102,20 @@ test("a browser without a native PiP API offers a choice and leaves the shift ru
   assert.equal(ui.elements.get("pin-help").open, true);
   assert.equal(ui.elements.get("retry-pin-video").hidden, true);
   assert.equal(ui.elements.get("popout-button").attributes["aria-pressed"], "false");
+});
+
+test("a US paycheck can accompany the cat in Taipei without changing its currency", async () => {
+  const translations = { "今更已賺": "Earned this shift", "計薪中": "Clocked in", "出糧街機 · 置頂陪工": "Payroll Arcade · Companion" };
+  const region = { code: "en-US", symbol: "$", t: key => translations[key] ?? key };
+  const destination = { code: "zh-TW", poster: "taipei.jpg", atlas: "taipei-typing.jpg", city: "台北" };
+  const ui = setup(true, region, destination);
+  ui.pin.prime();
+  ui.click();
+  await new Promise(setImmediate);
+  assert.equal(ui.child.document.documentElement.lang, "en-US");
+  assert.equal(ui.child.document.title, "Payroll Arcade · Companion");
+  assert.equal(ui.frames.at(-1)[2], destination.atlas);
+  assert.ok(ui.painted.includes("台北"));
+  assert.equal(ui.canvas.attributes["aria-label"], "Clocked in · Earned this shift $0.00");
+  await ui.pin.close();
 });

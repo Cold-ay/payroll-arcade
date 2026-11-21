@@ -47,8 +47,7 @@ function swing(out,source,part,pivot,angle,dx,dy) {
     if(part.mask[i]) out[y*W+x]=source[i];
   }
 }
-function keyboard(source) {
-  const plate=readPixels(join(here,"../artwork/typing-plate.png"));
+function keyboard(source, plate=readPixels(join(here,"../artwork/typing-plate.png"))) {
   const left=cut([[210,420],[215,402],[222,395],[233,382],[254,370],[276,360],[293,359],[310,363],[326,367],[339,377],[356,380],[365,383],[381,386],[398,390],[409,396],[418,405],[424,417],[425,438],[422,448],[414,455],[407,455],[405,459],[394,462],[381,462],[376,460],[365,464],[341,464],[332,459],[317,457],[307,451],[291,454],[275,457],[266,462],[262,472],[251,472],[245,469],[231,467],[217,461],[209,449],[207,436]]);
   const right=cut([[512,388],[519,375],[528,365],[545,356],[558,354],[576,355],[589,359],[604,367],[607,382],[607,406],[613,411],[612,426],[602,433],[590,434],[585,431],[579,435],[561,435],[551,433],[545,439],[525,437],[515,433],[509,424],[507,407]]);
   return phase=>{
@@ -124,25 +123,30 @@ function tired(source) {
     return out;
   };
 }
-const generators={keyboard,cash,tea,tired};
-for(const name of Object.keys(generators)) {
-  const source=readPixels(join(assets,"cat-"+name+".jpg"));
-  const frame=generators[name](source);
-  const palette="[0:v]scale=600:400:flags=lanczos,split[a][b];[a]palettegen=stats_mode=full[p];[b][p]paletteuse=dither=bayer:bayer_scale=4:diff_mode=rectangle";
-  const child=spawn("ffmpeg",["-y","-v","error","-f","rawvideo","-pix_fmt","rgba","-s","768x512","-r",String(fps),"-i","pipe:0","-filter_complex",palette,"-loop","0",join(assets,"cat-"+name+".gif")],{stdio:["pipe","ignore","inherit"]});
-  const exited=once(child,"exit");
-  for(let i=0;i<frames;i++) {
-    const img=frame(i/frames);
-    if(!child.stdin.write(Buffer.from(img.buffer,img.byteOffset,img.byteLength))) await once(child.stdin,"drain");
+async function renderClassic() {
+  const generators={keyboard,cash,tea,tired};
+  for(const name of Object.keys(generators)) {
+    const source=readPixels(join(assets,"cat-"+name+".jpg"));
+    const frame=generators[name](source);
+    const palette="[0:v]scale=600:400:flags=lanczos,split[a][b];[a]palettegen=stats_mode=full[p];[b][p]paletteuse=dither=bayer:bayer_scale=4:diff_mode=rectangle";
+    const child=spawn("ffmpeg",["-y","-v","error","-f","rawvideo","-pix_fmt","rgba","-s","768x512","-r",String(fps),"-i","pipe:0","-filter_complex",palette,"-loop","0",join(assets,"cat-"+name+".gif")],{stdio:["pipe","ignore","inherit"]});
+    const exited=once(child,"exit");
+    for(let i=0;i<frames;i++) {
+      const img=frame(i/frames);
+      if(!child.stdin.write(Buffer.from(img.buffer,img.byteOffset,img.byteLength))) await once(child.stdin,"drain");
+    }
+    child.stdin.end();
+    if((await exited)[0]!==0) throw Error("Failed to encode "+name);
+    console.log(name+" · "+frames+" frames · "+fps+" fps");
   }
-  child.stdin.end();
-  if((await exited)[0]!==0) throw Error("Failed to encode "+name);
-  console.log(name+" · "+frames+" frames · "+fps+" fps");
+
+  const sheet = spawnSync("ffmpeg", [
+    "-y", "-v", "error", "-ignore_loop", "1", "-i", join(assets, "cat-keyboard.gif"),
+    "-vf", "fps=8,scale=216:144:flags=lanczos,tile=8x4",
+    "-frames:v", "1", "-update", "1", "-q:v", "4", join(assets, "typing-frames.jpg"),
+  ], { stdio: "inherit" });
+  if (sheet.status !== 0) throw Error("Failed to encode typing sprite sheet");
 }
 
-const sheet = spawnSync("ffmpeg", [
-  "-y", "-v", "error", "-ignore_loop", "1", "-i", join(assets, "cat-keyboard.gif"),
-  "-vf", "fps=8,scale=216:144:flags=lanczos,tile=8x4",
-  "-frames:v", "1", "-update", "1", "-q:v", "4", join(assets, "typing-frames.jpg"),
-], { stdio: "inherit" });
-if (sheet.status !== 0) throw Error("Failed to encode typing sprite sheet");
+export { readPixels, keyboard, cut, color };
+if (process.argv[1] === fileURLToPath(import.meta.url)) await renderClassic();

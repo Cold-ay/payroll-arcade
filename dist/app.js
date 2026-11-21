@@ -1,32 +1,29 @@
 (() => {
   "use strict";
   const $ = id => document.getElementById(id);
-  const STORE = "payroll-arcade.shift.v1";
+  const region = activeRegion;
+  const destination = activeDestination;
+  const t = source => region.t(source);
+  const regional = (cantonese, taiwan, english) =>
+    region.code === "en-US" ? english : region.code === "zh-TW" ? taiwan : cantonese;
+  // Hong Kong keeps the original storage keys, including shifts saved before region selection.
+  const ledgerKey = base => region.code === "zh-HK" ? base : base + "." + region.code;
+  const STORE = ledgerKey("payroll-arcade.shift.v1");
   const SOUND = "payroll-arcade.sound.v1";
   const MOTION = "payroll-arcade.cat-motion.v1";
   const reducedMotion = matchMedia("(prefers-reduced-motion: reduce)");
-  const TEA_PRICE = 20;
-  const goals = [
-    { value: 1, name: "第一蚊入袋", icon: "brand" },
-    { value: 20, name: "凍奶茶自由", icon: "tea" },
-    { value: 55, name: "兩餸飯自由", icon: "meal" },
-    { value: 100, name: "紅衫魚入袋", icon: "fish" },
-    { value: 300, name: "放工打邊爐", icon: "pot" },
-    { value: 500, name: "大牛報到", icon: "cash" },
-    { value: 1000, name: "金牛捕獲", icon: "stash" },
-    { value: 10000, name: "萬元打工傳說", icon: "trophy" },
+  const goals = region.goals;
+  const art = [
+    { image: destination.poster, loop: destination.loop },
+    { image: "assets/cat-cash.jpg", loop: "assets/cat-cash.gif" },
+    { image: "assets/cat-tea.jpg", loop: "assets/cat-tea.gif" },
+    { image: "assets/cat-tired.jpg", loop: "assets/cat-tired.gif" },
   ];
-  const channels = [
-    { image: "assets/cat-keyboard.jpg", loop: "assets/cat-keyboard.gif", quote: "「鍵盤一響，黃金萬兩。」", alt: "戴黑超嘅橘貓左右手輪流敲鍵盤。" },
-    { image: "assets/cat-cash.jpg", loop: "assets/cat-cash.gif", quote: "「錢唔係萬能，係貓能。」", alt: "橘貓搖住條尾，攬實一大疊鈔票。" },
-    { image: "assets/cat-tea.jpg", loop: "assets/cat-tea.gif", quote: "「呢啖奶茶，老細請。」", alt: "橘貓拎起茶杯啜一啖，杯口冒住熱氣。" },
-    { image: "assets/cat-tired.jpg", loop: "assets/cat-tired.gif", quote: "「叉一格電，等陣再嚟。」", alt: "橘貓伏喺鍵盤小睡，頭仔跟住呼吸起伏。" },
-  ];
-  const cents = new Intl.NumberFormat("en-HK", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-  const grouped = new Intl.NumberFormat("en-HK", { maximumFractionDigits: 2 });
-  const compact = new Intl.NumberFormat("en-HK", { notation: "compact", maximumFractionDigits: 2 });
-  const whole = new Intl.NumberFormat("en-HK", { maximumFractionDigits: 0 });
-  const weekday = new Intl.DateTimeFormat("en-GB", { weekday: "short" });
+  const cents = new Intl.NumberFormat(region.code, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  const grouped = new Intl.NumberFormat(region.code, { maximumFractionDigits: 2 });
+  const compact = new Intl.NumberFormat(region.code, { notation: "compact", maximumFractionDigits: 2 });
+  const whole = new Intl.NumberFormat(region.code, { maximumFractionDigits: 0 });
+  const dateLabel = new Intl.DateTimeFormat(region.code, { year: "numeric", month: "short", day: "numeric", weekday: "short" });
   const nodes = Object.fromEntries(Array.from(document.querySelectorAll("[id]"), el => [el.id, el]));
   let usableStorage = true;
   let audioContext;
@@ -52,7 +49,7 @@
     try { localStorage.setItem(key, value); }
     catch {
       usableStorage = false;
-      $("privacy").lastElementChild.textContent = "資料暫存喺呢個分頁";
+      $("privacy").lastElementChild.textContent = t("資料暫存喺呢個分頁");
     }
   }
   function readState() {
@@ -64,12 +61,12 @@
     } catch { return null; }
   }
   const initial = readState();
-  let state = initial || Payroll.create(Date.now());
+  let state = initial || Payroll.create(Date.now(), { salary: region.sampleSalary, days: 22, hours: 8, autoStop: true });
   if (!initial) writeKey(STORE, JSON.stringify(state));
   let sound = readKey(SOUND) === "on";
   let motionPreference = readKey(MOTION);
-  if (!usableStorage) $("privacy").lastElementChild.textContent = "資料暫存喺呢個分頁";
-  const refreshLeave = mountLeavePlanner(() => state.pay, readKey, writeKey, cash);
+  if (!usableStorage) $("privacy").lastElementChild.textContent = t("資料暫存喺呢個分頁");
+  const refreshLeave = mountLeavePlanner(() => state.pay, readKey, writeKey, cash, region, ledgerKey("payroll-arcade.leave.v1"));
 
   const goalCount = total => goals.filter(goal => total >= goal.value).length;
   let previousGoal = goalCount(Payroll.snapshot(state, Date.now()).total);
@@ -77,7 +74,7 @@
     const el = nodes[id];
     if (el.textContent !== value) el.textContent = value;
   }
-  function cash(value) { return "HK$" + cents.format(value); }
+  function cash(value) { return region.symbol + cents.format(value); }
   function notify(message) {
     clearTimeout(toastTimer);
     text("toast", message);
@@ -154,12 +151,13 @@
       const remaining = Payroll.shiftOutlook(state, view);
       const atTarget = view.elapsed >= state.pay.hours * Payroll.HOUR;
       const finished = state.status === "finished" || view.due;
-      text("outlook-label", finished ? "今更袋穩" : atTarget ? "已達工時目標" : "今更仲可以賺");
+      text("outlook-label", t(finished ? "今更袋穩" : atTarget ? "已達工時目標" : "今更仲可以賺"));
       text("shift-outlook", cash(finished || atTarget ? view.earned : remaining));
-      text("outlook-hours", finished ? "收工，好好抖吓" : atTarget ? "繼續累積中" : "按 " + state.pay.hours + " 小時一更");
+      text("outlook-hours", finished ? t("收工，好好抖吓") : atTarget ? t("繼續累積中") :
+        regional(`按 ${state.pay.hours} 小時一更`, `每班 ${state.pay.hours} 小時`, `${state.pay.hours}-hour shift`));
       updateTitle(view, now, force);
       setStat("all-time", view.total);
-      setStat("tea-count", view.earned / TEA_PRICE);
+      setStat("tea-count", view.earned / region.teaPrice);
       updateGoals(view.total);
       updateDate(now);
       if ($("finish").open) text("finish-total", cash(view.earned));
@@ -170,14 +168,14 @@
     if (pendingAutoStop) return;
     pendingAutoStop = true;
     transact((latest, time) => Payroll.settleIfDue(latest, time)).then(() => {
-      if (state.status === "finished" && !document.hidden) notify("夠鐘！今更已自動收工。");
+      if (state.status === "finished" && !document.hidden) notify(t("夠鐘！今更已自動收工。"));
     }).finally(() => { pendingAutoStop = false; });
   }
   function updateTitle(view, now, force) {
     if (!force && Math.abs(now - titleUpdatedAt) < 1000) return;
     titleUpdatedAt = now;
-    const label = state.status === "finished" || view.due ? "收工" : state.status === "paused" ? "休息中" : "今更已賺";
-    const title = $("boss-sheet").open ? "部門營運摘要" : cash(view.earned) + " · " + (state.demo ? "試玩" : "") + label + "｜出糧街機";
+    const label = t(state.status === "finished" || view.due ? "已收工" : state.status === "paused" ? "休息中" : "今更已賺");
+    const title = $("boss-sheet").open ? t("部門營運摘要") : cash(view.earned) + " · " + (state.demo ? t("試玩") : "") + label + " | " + t("出糧街機");
     if (document.title !== title) document.title = title;
   }
   function updateDate(now) {
@@ -186,33 +184,39 @@
     if (dateString === lastDay) return;
     lastDay = dateString;
     $("today").dateTime = dateString.replaceAll(".", "-");
-    $("today").lastElementChild.textContent = dateString + "  " + weekday.format(date).toUpperCase();
+    $("today").lastElementChild.textContent = dateLabel.format(date);
   }
   function refreshControls() {
     const run = state.status === "running";
     const finished = state.status === "finished";
     const chip = $("run-state");
     chip.classList.toggle("idle", !run);
-    chip.lastElementChild.textContent = (state.demo ? "試玩" : "") + (run ? "計薪中" : finished ? "已收工" : "已暫停");
-    text("clock-label", run ? "暫停計薪" : finished ? "開新一更" : "繼續計薪");
+    chip.lastElementChild.textContent = (state.demo ? t("試玩") : "") + t(run ? "計薪中" : finished ? "已收工" : "已暫停");
+    text("clock-label", t(run ? "暫停計薪" : finished ? "開新一更" : "繼續計薪"));
     Pixels.draw($("clock-button").querySelector("canvas"), run ? "pause" : "play");
     $("finish-button").disabled = finished;
     const rate = Payroll.perHour(state.pay);
     const msRate = rate / Payroll.HOUR;
     const precision = Math.min(15, Math.max(6, 1 - Math.floor(Math.log10(msRate))));
-    text("ms-rate", "+HK$" + (run ? msRate : 0).toFixed(precision));
+    text("ms-rate", "+" + region.symbol + (run ? msRate : 0).toFixed(precision));
     setStat("hourly", rate);
-    text("profile-note", (state.demo ? "試玩月薪 " : "月薪 ") + "HK$" + grouped.format(state.pay.salary) + " · 每月 " + state.pay.days + " 日 · 每日 " + state.pay.hours + " 小時");
+    const monthly = region.symbol + grouped.format(state.pay.salary);
+    const { days, hours } = state.pay;
+    text("profile-note", (state.demo ? t("試玩") : "") + regional(
+      `月薪 ${monthly} · 每月 ${days} 日 · 每日 ${hours} 小時`,
+      `月薪 ${monthly} · 每月 ${days} 天 · 每天 ${hours} 小時`,
+      `${monthly}/month · ${days} days/month · ${hours} h/day`
+    ));
   }
   function updateGoals(total) {
     const count = goalCount(total);
     const next = goals[count] || goals[goals.length - 1];
     const done = count === goals.length;
     const percent = Math.min(100, Math.floor(total / next.value * 100));
-    text("goal-tag", done ? "全部成就已解鎖" : "下個解鎖目標");
+    text("goal-tag", t(done ? "全部成就已解鎖" : "下個解鎖目標"));
     text("goal-name", next.name);
-    text("goal-amount", "HK$" + grouped.format(next.value));
-    text("remaining", done ? "打工圖鑑，全收集！" : "已累積 " + cash(total));
+    text("goal-amount", region.symbol + grouped.format(next.value));
+    text("remaining", done ? t("打工圖鑑，全收集！") : t("已累積") + " " + cash(total));
     text("progress-pct", percent + "%");
     if ($("goal-progress").getAttribute("aria-valuenow") !== String(percent)) {
       $("goal-progress").setAttribute("aria-valuenow", percent);
@@ -220,7 +224,7 @@
     }
     if ($("next-art").dataset.pixel !== next.icon) Pixels.draw($("next-art"), next.icon);
     if (count > previousGoal && !companion && !document.hidden && !$("boss-sheet").open) {
-      notify("解鎖成就！" + goals[count - 1].name);
+      notify(t("解鎖成就！") + goals[count - 1].name);
       burst("cash", 13);
       chime("unlock");
     }
@@ -239,12 +243,12 @@
       art.setAttribute("aria-hidden", "true");
       desc.className = "goal-desc";
       desc.textContent = goal.name;
-      price.textContent = "HK$" + grouped.format(goal.value);
+      price.textContent = region.symbol + grouped.format(goal.value);
       desc.append(price);
       const unlocked = index < count;
       item.className = unlocked ? "unlocked" : "locked";
       status.className = "goal-status";
-      status.textContent = unlocked ? "已解鎖" : "未解鎖";
+      status.textContent = t(unlocked ? "已解鎖" : "未解鎖");
       item.append(art, desc, status);
       list.append(item);
       Pixels.draw(art, goal.icon);
@@ -254,8 +258,8 @@
   function openSettings() {
     const { salary, days, hours, autoStop } = state.pay;
     $("salary").value = salary; $("days").value = days; $("hours").value = hours; $("auto-stop").checked = autoStop;
-    text("settings-copy", state.demo ? "而家係試玩模式。填入自己嘅人工，今更收入就會由零開始計。" : "新時薪由儲存嗰刻開始計，之前賺落嘅收入會保留。");
-    text("save-pay", state.demo ? "儲存並開工" : "儲存設定");
+    text("settings-copy", t(state.demo ? "而家係試玩模式。填入自己嘅人工，今更收入就會由零開始計。" : "新時薪由儲存嗰刻開始計，之前賺落嘅收入會保留。"));
+    text("save-pay", t(state.demo ? "儲存並開工" : "儲存設定"));
     refreshPreview();
     $("settings").showModal();
   }
@@ -276,7 +280,7 @@
     const demo = state.demo;
     await transact((latest, now) => Payroll.changePay(latest, now, pay));
     $("settings").close();
-    notify(demo ? "打卡成功！今更由零開始。" : "人工已更新，賺落嘅錢已保留。");
+    notify(t(demo ? "打卡成功！今更由零開始。" : "人工已更新，賺落嘅錢已保留。"));
     chime("unlock");
   });
   $("clock-button").addEventListener("click", async () => {
@@ -291,7 +295,8 @@
   $("confirm-finish").addEventListener("click", async () => {
     await transact((latest, now) => Payroll.changeStatus(latest, now, "finished"));
     $("finish").close();
-    notify("收工！今更袋咗 " + cash(state.earned) + "。");
+    const amount = cash(state.earned);
+    notify(regional(`收工！今更袋咗 ${amount}。`, `下班啦！這班賺了 ${amount}。`, `Clocked out! You earned ${amount} this shift.`));
     chime("unlock");
   });
   $("milestones-button").addEventListener("click", () => {
@@ -309,19 +314,21 @@
     return motionPreference === "on" || motionPreference !== "off" && !reducedMotion.matches;
   }
   function showCat() {
-    const channel = channels[channelIndex];
+    const channel = region.channels[channelIndex];
+    $("scene-button").hidden = channelIndex !== 0;
     const moving = motionEnabled() && catOnscreen && !document.hidden && !$("boss-sheet").open;
     const frame = channelIndex + (moving ? "-moving" : "-still");
     const img = $("meme-image");
     if (frame !== catFrame) {
       catFrame = frame;
-      img.src = moving ? channel.loop : channel.image;
-      img.alt = channel.alt;
+      img.src = moving ? art[channelIndex].loop : art[channelIndex].image;
+      img.alt = channelIndex === 0 ? destination.alt : channel.alt;
     }
-    text("meme-quote", channel.quote);
+    const away = channelIndex === 0 && destination.code !== region.code;
+    text("meme-quote", away ? regional("「換咗個景，鍵盤照響。」", "「換個風景，貓掌照常上班。」", "“Same paws, different office.”") : channel.quote);
     text("channel", "CH. " + String(channelIndex + 1).padStart(2, "0"));
     const button = $("motion-button");
-    const label = motionEnabled() ? "暫停貓動畫" : "播放貓動畫";
+    const label = t(motionEnabled() ? "暫停貓動畫" : "播放貓動畫");
     button.setAttribute("aria-label", label); button.title = label;
     Pixels.draw(button.querySelector("canvas"), motionEnabled() ? "pause" : "play");
   }
@@ -337,7 +344,7 @@
     }).observe($("meme-image").parentElement);
   }
   $("channel-button").addEventListener("click", () => {
-    channelIndex = (channelIndex + 1) % channels.length;
+    channelIndex = (channelIndex + 1) % art.length;
     showCat();
     const screen = $("meme-image").parentElement;
     screen.classList.remove("tuning");
@@ -348,12 +355,12 @@
   const pin = mountPinnedCompanion(now => {
     const view = Payroll.snapshot(state, now);
     return { earned: view.earned, elapsed: view.elapsed, status: view.due ? "finished" : state.status, demo: state.demo };
-  }, motionEnabled);
+  }, motionEnabled, region, destination);
 
   function applyCompanion() {
     companion = location.hash === "#companion" || location.hash === "#companion-window";
     document.body.classList.toggle("companion", companion);
-    text("companion-label", companion ? "返回出糧台" : "陪工模式");
+    text("companion-label", t(companion ? "返回出糧台" : "陪工模式"));
     $("companion-button").setAttribute("aria-pressed", String(companion));
     $("popout-button").hidden = !companion;
     if (companion) pin.prime();
@@ -369,16 +376,18 @@
   $("ordinary-popup").addEventListener("click", () => {
     $("pin-help").close();
     const url = new URL(location.href);
+    url.searchParams.set("region", region.code);
+    url.searchParams.set("scene", destination.code);
     url.hash = "companion-window";
-    const small = window.open(url.href, "payroll-arcade-companion", "popup=yes,width=465,height=670,resizable=yes,scrollbars=yes");
+    const small = window.open(url.href, "payroll-arcade-companion-" + region.code, "popup=yes,width=465,height=670,resizable=yes,scrollbars=yes");
     if (small) small.focus();
-    else notify("瀏覽器未能開小窗，可以喺呢個分頁繼續陪工。");
+    else notify(t("瀏覽器未能開小窗，可以喺呢個分頁繼續陪工。"));
   });
   window.addEventListener("hashchange", applyCompanion);
 
   function updateSoundButton() {
-    text("sound-label", sound ? "音效開啟" : "音效關閉");
-    $("sound-button").setAttribute("aria-label", sound ? "音效開啟，撳掣靜音" : "音效關閉，撳掣開啟");
+    text("sound-label", t(sound ? "音效開啟" : "音效關閉"));
+    $("sound-button").setAttribute("aria-label", t(sound ? "音效開啟，撳掣靜音" : "音效關閉，撳掣開啟"));
     $("sound-button").setAttribute("aria-pressed", String(sound));
     Pixels.draw($("sound-button").querySelector("canvas"), sound ? "sound" : "mute");
   }
@@ -436,8 +445,8 @@
       animation.onfinish = () => sprite.remove();
     }
   }
-  $("rain-button").addEventListener("click", () => { burst("cash", 28); chime("rain"); notify("天文台發出鈔票雨警告，請打開銀包。"); });
-  $("fish-button").addEventListener("click", () => { burst("fish", 12); chime("fish"); notify(state.status === "running" ? "成功摸到魚！人工繼續游入嚟。" : "成功摸到魚！條魚陪你唞吓。"); });
+  $("rain-button").addEventListener("click", () => { burst("cash", 28); chime("rain"); notify(t("天文台發出鈔票雨警告，請打開銀包。")); });
+  $("fish-button").addEventListener("click", () => { burst("fish", 12); chime("fish"); notify(t(state.status === "running" ? "成功摸到魚！人工繼續游入嚟。" : "成功摸到魚！條魚陪你唞吓。")); });
 
   function openOffice() {
     void pin.close();
@@ -456,7 +465,7 @@
         const tr = table.insertRow();
         for (let col = 0; col <= 9; col++) {
           const cell = document.createElement(row === 0 || col === 0 ? "th" : "td");
-          cell.textContent = row === 0 ? (col ? String.fromCharCode(64 + col) : "") : col === 0 ? row : (entries[row - 1]?.[col - 1] || "");
+          cell.textContent = row === 0 ? (col ? String.fromCharCode(64 + col) : "") : col === 0 ? row : t(entries[row - 1]?.[col - 1] || "");
           if (row === 4 && col >= 2 && col <= 6) cell.className = "sheet-label";
           tr.append(cell);
         }
@@ -483,6 +492,7 @@
     if (event.key === SOUND) { sound = readKey(SOUND) === "on"; updateSoundButton(); }
     if (event.key === MOTION) { motionPreference = readKey(MOTION); showCat(); }
   });
+  document.querySelector(".stat-pink .stat-icon canvas").dataset.pixel = region.buyingIcon;
   for (const canvas of document.querySelectorAll("canvas[data-pixel]")) Pixels.draw(canvas);
   updateSoundButton();
   applyCompanion();
