@@ -172,6 +172,9 @@ button, h1, h2, .goal-name { line-break: strict; }
 .profile-note { color: inherit; font: inherit; text-align: right; }
 
 .companion-button { color: #d8f4b4; border-color: #526440; background: #263020; }
+.pin-action { color: #ddf8b7; background: #2c3b21; border-color: #64834d; }
+.pin-action[aria-pressed="true"] { background: #40532e; border-color: var(--lime); }
+.pin-stream { position: fixed; left: 0; bottom: 0; width: 2px; height: 2px; opacity: .001; pointer-events: none; }
 .companion-button:hover, .companion-button[aria-pressed="true"] { background: #35432a; border-color: #829d60; }
 .counter-panel { grid-template-rows: auto 1fr auto auto; min-height: 352px; }
 .shift-outlook { display: flex; align-items: baseline; flex-wrap: wrap; gap: 4px 9px; padding: 0 0 16px; font-size: .9rem; }

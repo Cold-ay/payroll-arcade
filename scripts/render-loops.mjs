@@ -139,3 +139,10 @@ for(const name of Object.keys(generators)) {
   if((await exited)[0]!==0) throw Error("Failed to encode "+name);
   console.log(name+" · "+frames+" frames · "+fps+" fps");
 }
+
+const sheet = spawnSync("ffmpeg", [
+  "-y", "-v", "error", "-ignore_loop", "1", "-i", join(assets, "cat-keyboard.gif"),
+  "-vf", "fps=8,scale=216:144:flags=lanczos,tile=8x4",
+  "-frames:v", "1", "-update", "1", "-q:v", "4", join(assets, "typing-frames.jpg"),
+], { stdio: "inherit" });
+if (sheet.status !== 0) throw Error("Failed to encode typing sprite sheet");

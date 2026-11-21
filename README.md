@@ -2,6 +2,14 @@
 
 一隻打字貓陪你返工。輸入月薪、每月工作日數同每日工時，就可以睇到今更收入逐毫秒累積。休假試算會顯示全薪、部分有薪或無薪假之後嘅預計月薪。
 
+[開出糧台](https://payroll-arcade.pages.dev/) · [直接開陪工模式](https://payroll-arcade.pages.dev/#companion)
+
+## 置頂陪工小窗
+
+用桌面 Chrome 或 Edge 開「陪工模式」，撳「置頂小窗」，再將畫中畫拖去螢幕角落。可以拉窗邊調整大小。保留原本分頁，切去其他 app 時，貓會繼續打字，銀碼同原本分頁共用同一更嘅紀錄。撳「暫停計薪」會同步暫停小窗，關閉小窗則會繼續計薪。
+
+網站會按瀏覽器支援情況使用文件或影片畫中畫。未能開啟系統畫中畫時，可以選擇「開普通小窗」。
+
 ## 本機運行
 
 網站用原生 HTML、CSS 同 JavaScript，所有媒體同字型都隨專案提供。
@@ -19,7 +27,7 @@ python3 -m http.server 8000 --bind 127.0.0.1 --directory dist
 ## 測試與素材
 
 ```sh
-node --test tests/payroll.test.cjs
+node --test tests/*.test.cjs
 ```
 
 `dist/` 包含完整前端原始碼及可直接部署的網站。`scripts/render-loops.mjs` 使用 Node.js、FFmpeg、原始貓圖與 `artwork/typing-plate.png` 重建四個循環動畫。

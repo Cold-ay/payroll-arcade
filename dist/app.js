@@ -345,12 +345,18 @@
     chime("click");
   });
 
+  const pin = mountPinnedCompanion(now => {
+    const view = Payroll.snapshot(state, now);
+    return { earned: view.earned, elapsed: view.elapsed, status: view.due ? "finished" : state.status, demo: state.demo };
+  }, motionEnabled);
+
   function applyCompanion() {
     companion = location.hash === "#companion" || location.hash === "#companion-window";
     document.body.classList.toggle("companion", companion);
     text("companion-label", companion ? "返回出糧台" : "陪工模式");
     $("companion-button").setAttribute("aria-pressed", String(companion));
-    $("popout-button").hidden = !companion || location.hash === "#companion-window";
+    $("popout-button").hidden = !companion;
+    if (companion) pin.prime();
     showCat();
   }
   $("companion-button").addEventListener("click", () => {
@@ -360,7 +366,8 @@
     applyCompanion();
     window.scrollTo(0, 0);
   });
-  $("popout-button").addEventListener("click", () => {
+  $("ordinary-popup").addEventListener("click", () => {
+    $("pin-help").close();
     const url = new URL(location.href);
     url.hash = "companion-window";
     const small = window.open(url.href, "payroll-arcade-companion", "popup=yes,width=465,height=670,resizable=yes,scrollbars=yes");
@@ -433,6 +440,7 @@
   $("fish-button").addEventListener("click", () => { burst("fish", 12); chime("fish"); notify(state.status === "running" ? "成功摸到魚！人工繼續游入嚟。" : "成功摸到魚！條魚陪你唞吓。"); });
 
   function openOffice() {
+    void pin.close();
     const table = $("office-table");
     if (!table.rows.length) {
       const entries = [

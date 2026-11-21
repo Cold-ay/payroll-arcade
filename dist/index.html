@@ -11,6 +11,7 @@
   <script defer src="payroll.js"></script>
   <script defer src="icons.js"></script>
   <script defer src="leave.js"></script>
+  <script defer src="pin.js"></script>
   <script defer src="app.js"></script>
 </head>
 <body>
@@ -24,7 +25,7 @@
         <button type="button" class="nav-button companion-button" id="companion-button" aria-pressed="false">
           <canvas data-pixel="screen" aria-hidden="true"></canvas><span id="companion-label">陪工模式</span>
         </button>
-        <button type="button" class="nav-button" id="popout-button" hidden><canvas data-pixel="popout" aria-hidden="true"></canvas>開小窗</button>
+        <button type="button" class="nav-button pin-action" id="popout-button" hidden aria-pressed="false" title="用系統畫中畫，切去其他 app 都睇到"><canvas data-pixel="popout" aria-hidden="true"></canvas><span id="pin-label">置頂小窗</span></button>
         <button type="button" class="nav-button sound-button" id="sound-button" aria-pressed="false" aria-label="音效關閉，撳掣開啟">
           <canvas data-pixel="mute" aria-hidden="true"></canvas><span id="sound-label">音效關閉</span>
         </button>
@@ -161,6 +162,12 @@
     </footer>
     <noscript>開啟 JavaScript 就可以睇到跳動嘅收入。</noscript>
   </main>
+
+  <dialog class="dialog" id="pin-help" aria-labelledby="pin-help-title">
+    <div class="dialog-head"><h2 id="pin-help-title"><canvas data-pixel="popout" aria-hidden="true"></canvas>置頂陪工小窗</h2><button type="button" class="icon-button" data-close aria-label="關閉小窗說明"><canvas data-pixel="cross" aria-hidden="true"></canvas></button></div>
+    <p class="dialog-copy" id="pin-help-message"></p>
+    <div class="dialog-buttons"><button type="button" class="action-secondary" id="ordinary-popup">開普通小窗</button><button type="button" class="action-primary" id="retry-pin-video" hidden>用影片畫中畫</button></div>
+  </dialog>
 
   <dialog class="dialog settings-dialog" id="settings" aria-labelledby="settings-title">
     <div class="dialog-head"><h2 id="settings-title"><canvas data-pixel="gear" aria-hidden="true"></canvas>薪金設定</h2><button type="button" class="icon-button" data-close aria-label="關閉薪金設定"><canvas data-pixel="cross" aria-hidden="true"></canvas></button></div>
