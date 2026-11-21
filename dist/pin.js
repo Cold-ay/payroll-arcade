@@ -100,6 +100,15 @@ function mountPinnedCompanion(readShift, motionEnabled) {
     retry.hidden = !allowRetry;
     if (!help.open) help.showModal();
   }
+  function offerVideo(message) {
+    if (canVideo) {
+      try { prepareMedia(); } catch { discardMedia(); }
+    }
+    explain(message, Boolean(canVideo));
+  }
+  function closedImmediately(session) {
+    return !session.closing && performance.now() - session.openedAt < 700;
+  }
   function discardMedia(stage = media) {
     if (!stage || stage !== media) return;
     media = null;
@@ -121,6 +130,14 @@ function mountPinnedCompanion(readShift, motionEnabled) {
     stage.timer = setInterval(tick, 80);
     tick();
   }
+  function videoEnded(stage) {
+    const session = floating;
+    stage.ended = true;
+    discardMedia(stage);
+    if (session?.stage === stage && closedImmediately(session)) {
+      explain("呢個瀏覽器隨即收起咗畫中畫。用桌面 Chrome 或 Edge 開啟呢頁，仲可以將打字貓放喺其他 app 上面。", false);
+    }
+  }
   function prepareMedia() {
     if (media) return media;
     const canvas = canvasIn(document);
@@ -131,11 +148,11 @@ function mountPinnedCompanion(readShift, motionEnabled) {
     video.className = "pin-stream";
     video.setAttribute("aria-hidden", "true");
     document.body.append(video);
-    const stage = { canvas, stream, video, timer: 0, expiry: 0 };
+    const stage = { canvas, stream, video, timer: 0, expiry: 0, requested: false, ended: false };
     media = stage;
-    video.addEventListener("leavepictureinpicture", () => discardMedia(stage));
+    video.addEventListener("leavepictureinpicture", () => videoEnded(stage));
     video.addEventListener("webkitpresentationmodechanged", () => {
-      if (video.webkitPresentationMode === "inline" && floating?.stage === stage) discardMedia(stage);
+      if (video.webkitPresentationMode === "inline" && stage.requested) videoEnded(stage);
     });
     video.srcObject = stream;
     startFrames(stage);
@@ -172,11 +189,18 @@ function mountPinnedCompanion(readShift, motionEnabled) {
       paint();
       // The timer belongs to the visible PiP document even when the main tab is in the background.
       const timer = win.setInterval(paint, 80);
-      floating = { win };
+      const session = { win, openedAt: performance.now(), closing: false };
+      floating = session;
       win.addEventListener("pagehide", () => {
         win.clearInterval(timer);
-        if (floating?.win === win) floating = null;
+        if (floating !== session) return;
+        floating = null;
         reflect();
+        if (closedImmediately(session)) {
+          offerVideo(canVideo
+            ? "呢個瀏覽器隨即收起咗文件畫中畫。撳「用影片畫中畫」可以試另一種置頂方式，同樣會見到打字貓同銀碼。"
+            : "呢個瀏覽器隨即收起咗文件畫中畫。用桌面 Chrome 或 Edge 開啟呢頁就可以置頂。");
+        }
       }, { once: true });
     } catch (error) { win.close(); throw error; }
   }
@@ -195,6 +219,7 @@ function mountPinnedCompanion(readShift, motionEnabled) {
     startFrames(stage);
     void video.play().catch(() => {});
     if (video.readyState < 2) await waitForVideo(stage);
+    stage.requested = true;
     if (document.pictureInPictureEnabled && typeof video.requestPictureInPicture === "function") {
       await video.requestPictureInPicture();
     } else if (video.webkitSupportsPresentationMode?.("picture-in-picture")) {
@@ -204,11 +229,14 @@ function mountPinnedCompanion(readShift, motionEnabled) {
         if (video.webkitPresentationMode !== "picture-in-picture") throw Error("Presentation unavailable");
       }
     } else throw Error("Picture-in-picture unavailable");
-    floating = { stage };
+    if (stage.ended || media !== stage) throw Error("Presentation closed");
+    floating = { stage, openedAt: performance.now(), closing: false };
     clearTimeout(stage.expiry);
   }
   async function close() {
-    if (floating?.win) { floating.win.close(); return; }
+    if (!floating) return;
+    floating.closing = true;
+    if (floating.win) { floating.win.close(); return; }
     const stage = floating?.stage;
     if (!stage) return;
     try {
@@ -229,8 +257,7 @@ function mountPinnedCompanion(readShift, motionEnabled) {
       else explain("用支援系統畫中畫嘅桌面瀏覽器（例如 Chrome 或 Edge）開啟呢頁，就可以將打字貓拖到螢幕角落。", false);
     } catch {
       if (wantsDoc && canVideo) {
-        try { prepareMedia(); } catch { discardMedia(); }
-        explain("呢個視窗未能開啟文件畫中畫。可以試用影片畫中畫，同樣會顯示打字貓同實時銀碼。", true);
+        offerVideo("呢個視窗未能開啟文件畫中畫。可以試用影片畫中畫，同樣會顯示打字貓同實時銀碼。");
       } else {
         discardMedia();
         explain("瀏覽器暫時未能開啟系統畫中畫。可以重試，或者用桌面 Chrome 或 Edge 開啟同一個網址。", Boolean(canVideo));
@@ -239,6 +266,10 @@ function mountPinnedCompanion(readShift, motionEnabled) {
   }
   button.addEventListener("click", () => void toggle());
   retry.addEventListener("click", () => { help.close(); void toggle(true); });
-  window.addEventListener("pagehide", () => { floating?.win?.close(); discardMedia(); });
+  window.addEventListener("pagehide", () => {
+    if (floating) floating.closing = true;
+    floating?.win?.close();
+    discardMedia();
+  });
   return { prime, close };
 }

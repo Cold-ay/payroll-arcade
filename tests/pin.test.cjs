@@ -47,11 +47,11 @@ function setup(supportsDocumentPiP) {
   let now = 100000;
   const state = Payroll.create(now, { salary: 16000, days: 20, hours: 8, autoStop: true }, false);
   const mount = vm.runInNewContext(source + "\nmountPinnedCompanion", {
-    window, document, Date: { now: () => now }, Image: Art, HTMLCanvasElement: class {},
+    window, document, Date: { now: () => now }, performance: { now: () => now }, Image: Art, HTMLCanvasElement: class {},
   });
   const pin = mount(at => ({ ...Payroll.snapshot(state, at), status: state.status, demo: false }), () => true);
   return {
-    elements, canvas, frames, pin,
+    elements, canvas, frames, pin, dismissFromOS: () => child.close(),
     click: () => document.getElementById("popout-button").dispatchEvent(new Event("click")),
     advance(ms) { now += ms; if (repaint) repaint(); },
     pause() { Object.assign(state, Payroll.changeStatus(state, now, "paused")); },
@@ -78,9 +78,20 @@ test("the floating window paints elapsed pay and typing frames independently of 
   assert.match(ui.canvas.attributes["aria-label"], /已暫停，今更已賺港幣 100\.00$/);
   await ui.pin.close();
   assert.equal(button.attributes["aria-pressed"], "false");
+  assert.equal(Boolean(ui.elements.get("pin-help").open), false);
   const count = ui.frames.length;
   ui.advance(3600000);
   assert.equal(ui.frames.length, count);
+});
+
+test("an embedded browser that immediately dismisses its PiP window gives the user an explanation", async () => {
+  const ui = setup(true);
+  ui.click();
+  await new Promise(setImmediate);
+  ui.dismissFromOS();
+  assert.equal(ui.elements.get("pin-help").open, true);
+  assert.match(ui.elements.get("pin-help-message").textContent, /收起咗文件畫中畫/);
+  assert.equal(ui.elements.get("popout-button").attributes["aria-pressed"], "false");
 });
 
 test("a browser without a native PiP API offers a choice and leaves the shift running", () => {
