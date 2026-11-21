@@ -1,0 +1,204 @@
+<!doctype html>
+<html lang="zh-HK">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#101112">
+  <meta name="description" content="掛住出糧街機，睇住收入逐毫秒累積。有隻打字貓陪工，亦可以試算放假後今個月預計可袋幾多。">
+  <title>出糧街機 · 打工人出糧台</title>
+  <link rel="icon" href="assets/coin.png" type="image/png">
+  <link rel="stylesheet" href="style.css">
+  <script defer src="payroll.js"></script>
+  <script defer src="icons.js"></script>
+  <script defer src="leave.js"></script>
+  <script defer src="app.js"></script>
+</head>
+<body>
+  <header class="topbar">
+    <div class="shell topbar-inner">
+      <div class="brand" aria-label="出糧街機 Payroll Arcade">
+        <canvas data-pixel="brand" class="brand-coin" aria-hidden="true"></canvas>
+        <div><div class="brand-name">出糧街機</div><div class="brand-en" lang="en">PAYROLL ARCADE</div></div>
+      </div>
+      <div class="nav-actions">
+        <button type="button" class="nav-button companion-button" id="companion-button" aria-pressed="false">
+          <canvas data-pixel="screen" aria-hidden="true"></canvas><span id="companion-label">陪工模式</span>
+        </button>
+        <button type="button" class="nav-button" id="popout-button" hidden><canvas data-pixel="popout" aria-hidden="true"></canvas>開小窗</button>
+        <button type="button" class="nav-button sound-button" id="sound-button" aria-pressed="false" aria-label="音效關閉，撳掣開啟">
+          <canvas data-pixel="mute" aria-hidden="true"></canvas><span id="sound-label">音效關閉</span>
+        </button>
+        <button type="button" class="nav-button settings-button" id="settings-button" aria-label="薪金設定">
+          <canvas data-pixel="gear" aria-hidden="true"></canvas><span>薪金設定</span>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <main class="shell main">
+    <div class="intro">
+      <div>
+        <h1>打工人出糧台<span class="title-cursor" aria-hidden="true"></span></h1>
+        <p>你同貓各有一個鍵盤。望返過嚟，又賺多咗少少。</p>
+      </div>
+      <time id="today" class="today"><canvas data-pixel="calendar" aria-hidden="true"></canvas><span></span></time>
+    </div>
+
+    <div class="hero-grid">
+      <section class="panel counter-panel" aria-labelledby="earn-title">
+        <div class="counter-texture" aria-hidden="true"></div>
+        <div class="corner-marks" aria-hidden="true"></div>
+        <div class="counter-heading">
+          <h2 id="earn-title"><canvas data-pixel="bars" aria-hidden="true"></canvas>今更累積收入</h2>
+          <span class="live-chip" id="run-state"><i></i><span>試玩計薪中</span></span>
+        </div>
+        <div class="amount-area">
+          <div class="amount-line" id="amount-line"><span class="currency">HK$</span><span class="amount-major" id="amount-major">0.00</span><span class="amount-tail" id="amount-tail">0000</span></div>
+          <div class="rate-line"><canvas data-pixel="trend" aria-hidden="true"></canvas><span class="rate-value" id="ms-rate">+HK$0.000038</span><span class="rate-unit">／ 毫秒</span></div>
+        </div>
+        <div class="shift-outlook">
+          <span class="outlook-label"><canvas data-pixel="flag" aria-hidden="true"></canvas><span id="outlook-label">今更仲可以賺</span></span>
+          <strong id="shift-outlook">HK$0.00</strong><small id="outlook-hours"></small>
+        </div>
+        <div class="counter-footer">
+          <div class="clock-controls">
+            <button class="action-primary" type="button" id="clock-button"><canvas data-pixel="pause" aria-hidden="true"></canvas><span id="clock-label">暫停計薪</span></button>
+            <button class="action-secondary" type="button" id="finish-button"><canvas data-pixel="stop" aria-hidden="true"></canvas>收工</button>
+          </div>
+          <div class="time-box"><span class="time-caption"><canvas data-pixel="clock" aria-hidden="true"></canvas>已計工時</span><span class="elapsed"><span id="elapsed-seconds">00:00:00</span><small id="elapsed-ms">.000</small></span></div>
+        </div>
+      </section>
+
+      <section class="panel meme-panel" aria-labelledby="meme-title">
+        <div class="meme-head">
+          <h2 id="meme-title"><canvas data-pixel="tv" aria-hidden="true"></canvas>迷因放送局</h2>
+          <div class="channel-tools"><span class="channel"><i></i><span id="channel">CH. 01</span></span><button type="button" id="motion-button" class="motion-button" aria-label="暫停貓動畫" title="暫停貓動畫"><canvas data-pixel="pause" aria-hidden="true"></canvas></button></div>
+        </div>
+        <div class="meme-display">
+          <img id="meme-image" src="assets/cat-keyboard.jpg" alt="戴黑超嘅橘貓左右手輪流敲鍵盤。" width="768" height="512" fetchpriority="high">
+          <div class="screen-lines" aria-hidden="true"></div>
+        </div>
+        <div class="meme-foot">
+          <p id="meme-quote">「鍵盤一響，黃金萬兩。」</p>
+          <button id="channel-button" type="button" class="channel-button" aria-label="迷因轉台"><canvas data-pixel="shuffle" aria-hidden="true"></canvas>轉台</button>
+        </div>
+      </section>
+    </div>
+
+    <section class="stats-grid" aria-label="薪金數據">
+      <article class="panel stat stat-lilac">
+        <span class="stat-icon"><canvas data-pixel="bolt" aria-hidden="true"></canvas></span>
+        <div><h2>折算時薪</h2><p class="stat-number"><small>HK$</small><span id="hourly">0.00</span></p></div>
+      </article>
+      <article class="panel stat stat-cyan">
+        <span class="stat-icon"><canvas data-pixel="stash" aria-hidden="true"></canvas></span>
+        <div><h2>歷來累積<span class="stat-aside">連今更</span></h2><p class="stat-number"><small>HK$</small><span id="all-time">0.00</span></p></div>
+      </article>
+      <article class="panel stat stat-pink">
+        <span class="stat-icon"><canvas data-pixel="tea" aria-hidden="true"></canvas></span>
+        <div><h2 title="以每杯 HK$20 試算">今更奶茶購買力</h2><p class="stat-number"><span id="tea-count">0.00</span><small class="after-unit">杯</small></p></div>
+      </article>
+    </section>
+
+    <section class="panel leave-panel" id="leave-lab" aria-labelledby="leave-title">
+      <div class="panel-title"><h2 id="leave-title"><canvas data-pixel="calendar" aria-hidden="true"></canvas>休假試算</h2></div>
+      <p class="leave-intro">揀個假期長度，睇吓今個月有幾多收入可以安排。</p>
+      <div class="leave-layout">
+        <div class="leave-controls">
+          <div class="leave-fields">
+            <div><label for="leave-duration">休息幾耐</label>
+              <div class="duration-group">
+                <input type="number" inputmode="decimal" min="0" step="any" value="0.5" id="leave-duration" aria-describedby="leave-note">
+                <select id="leave-unit" aria-label="假期長度單位"><option value="days">工作日</option><option value="hours">小時</option></select>
+              </div>
+            </div>
+            <div><label for="leave-kind">假期類別</label><select id="leave-kind"><option value="paid">全薪假</option><option value="partial">部分有薪假</option><option value="unpaid">無薪假</option></select></div>
+            <div id="percent-field" hidden><label for="leave-percent">照薪比例</label><div class="duration-group"><input id="leave-percent" type="number" inputmode="decimal" min="0" max="100" step="any" value="50"><span>%</span></div></div>
+          </div>
+          <div class="leave-presets" aria-label="常用假期長度">
+            <button type="button" data-hours="2">2 小時</button><button type="button" data-days="0.5">半日</button><button type="button" data-days="1">1 日</button>
+          </div>
+        </div>
+        <div class="leave-result" aria-live="polite" aria-atomic="true">
+          <span>本月預計可袋</span><strong id="leave-month">—</strong><p id="leave-message"></p>
+        </div>
+      </div>
+      <p class="leave-note" id="leave-note" role="status"></p>
+      <details class="leave-details">
+        <summary>睇計算明細</summary>
+        <dl><div><dt>原定月薪</dt><dd id="leave-base">—</dd></div><div><dt>工作時段收入</dt><dd id="leave-work">—</dd></div><div><dt>休假期間收入</dt><dd id="leave-paid">—</dd></div><div><dt>與原定月薪相差</dt><dd id="leave-change">—</dd></div></dl>
+        <p>按你設定嘅工作日數、工時同照薪比例估算。實際金額依公司計薪方式。試算期間，出糧台照常打卡。</p>
+      </details>
+    </section>
+
+    <div class="lower-grid">
+      <section class="panel milestone-panel" aria-labelledby="milestones-title">
+        <div class="panel-title">
+          <h2 id="milestones-title"><canvas data-pixel="trophy" aria-hidden="true"></canvas>出糧里程碑</h2>
+          <button type="button" class="text-button" id="milestones-button">睇晒成就</button>
+        </div>
+        <div class="milestone-details">
+          <span class="milestone-icon"><canvas id="next-art" data-pixel="pot" aria-hidden="true"></canvas></span>
+          <div class="goal-text"><p class="goal-label" id="goal-tag">下個解鎖目標</p><p class="goal-name" id="goal-name">放工打邊爐</p></div>
+          <div class="goal-amount" id="goal-amount">HK$300</div>
+        </div>
+        <div class="progress-track" id="goal-progress" role="progressbar" aria-label="里程碑進度" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"><span id="progress-fill"></span></div>
+        <div class="progress-meta"><span id="remaining">仲差 HK$0.00</span><strong id="progress-pct">0%</strong></div>
+      </section>
+
+      <section class="panel effects-panel" aria-labelledby="effects-title">
+        <div class="panel-title"><h2 id="effects-title"><canvas data-pixel="gamepad" aria-hidden="true"></canvas>迷因發射器</h2></div>
+        <div class="effect-pads">
+          <button type="button" class="effect-pad pad-green" id="rain-button"><canvas data-pixel="cash" aria-hidden="true"></canvas><span>落鈔票雨</span></button>
+          <button type="button" class="effect-pad pad-purple" id="fish-button"><canvas data-pixel="fish" aria-hidden="true"></canvas><span>帶薪摸魚</span></button>
+          <button type="button" class="effect-pad pad-orange" id="boss-button"><canvas data-pixel="siren" aria-hidden="true"></canvas><span>老細嚟喇</span></button>
+        </div>
+      </section>
+    </div>
+    <footer class="page-foot">
+      <span id="privacy"><canvas data-pixel="disk" aria-hidden="true"></canvas><span>資料只儲存喺你嘅瀏覽器</span></span>
+      <button type="button" id="profile-note" class="profile-note">試玩月薪 HK$24,000 · 每月 22 日 · 每日 8 小時</button>
+    </footer>
+    <noscript>開啟 JavaScript 就可以睇到跳動嘅收入。</noscript>
+  </main>
+
+  <dialog class="dialog settings-dialog" id="settings" aria-labelledby="settings-title">
+    <div class="dialog-head"><h2 id="settings-title"><canvas data-pixel="gear" aria-hidden="true"></canvas>薪金設定</h2><button type="button" class="icon-button" data-close aria-label="關閉薪金設定"><canvas data-pixel="cross" aria-hidden="true"></canvas></button></div>
+    <form id="settings-form">
+      <p class="dialog-copy" id="settings-copy"></p>
+      <label for="salary">每月人工</label>
+      <div class="field-wrap"><span>HK$</span><input type="number" inputmode="decimal" id="salary" min="0.01" max="99999999.99" step="0.01" required></div>
+      <div class="form-row">
+        <div><label for="days">每月工作日數</label><div class="field-wrap"><input type="number" inputmode="numeric" id="days" min="1" max="31" step="1" required><span>日</span></div></div>
+        <div><label for="hours">每日工時</label><div class="field-wrap"><input type="number" inputmode="decimal" id="hours" min="0.25" max="24" step="0.25" required><span>小時</span></div></div>
+      </div>
+      <label class="check-row"><input type="checkbox" id="auto-stop"><span>計滿每日工時就自動收工</span></label>
+      <div class="pay-preview"><span>折算時薪</span><strong id="rate-preview">—</strong></div>
+      <button class="action-primary dialog-action" id="save-pay" type="submit">儲存並開工</button>
+    </form>
+  </dialog>
+
+  <dialog class="dialog" id="finish" aria-labelledby="finish-title">
+    <div class="dialog-head"><h2 id="finish-title"><canvas data-pixel="flag" aria-hidden="true"></canvas>今日收工？</h2><button type="button" class="icon-button" data-close aria-label="關閉收工確認"><canvas data-pixel="cross" aria-hidden="true"></canvas></button></div>
+    <p class="dialog-copy">今更收入會計入歷來累積。下次開工，就由零開始新一更。</p>
+    <div class="pay-preview"><span>今更收入</span><strong id="finish-total">—</strong></div>
+    <div class="dialog-buttons"><button type="button" class="action-secondary" data-close>返多陣</button><button type="button" class="action-primary" id="confirm-finish">確認收工</button></div>
+  </dialog>
+
+  <dialog class="dialog" id="milestones" aria-labelledby="all-goals-title">
+    <div class="dialog-head"><h2 id="all-goals-title"><canvas data-pixel="trophy" aria-hidden="true"></canvas>出糧成就簿</h2><button type="button" class="icon-button" data-close aria-label="關閉成就簿"><canvas data-pixel="cross" aria-hidden="true"></canvas></button></div>
+    <p class="dialog-copy">歷來累積每過一關，自動解鎖一個成就。奶茶購買力以每杯 HK$20 試算。</p>
+    <ol id="goal-list" class="goal-list"></ol>
+  </dialog>
+
+  <dialog class="boss-sheet" id="boss-sheet" aria-labelledby="sheet-title">
+    <div class="sheet-top"><div class="sheet-logo" aria-hidden="true">▦</div><h2 id="sheet-title">部門營運摘要</h2><button type="button" data-close>返回出糧台 <kbd>Esc</kbd></button></div>
+    <div class="sheet-menu">檔案　 編輯　 檢視　 插入　 格式　 資料</div>
+    <div class="formula"><strong>B2</strong><em>ƒx</em>季度工作項目跟進</div>
+    <div class="sheet-scroller"><table id="office-table" aria-label="季度工作項目跟進試算表"></table></div>
+    <div class="sheet-tab">季度摘要</div>
+  </dialog>
+  <div id="particle-layer" aria-hidden="true"></div>
+  <div class="toast" id="toast" role="status" aria-live="polite" aria-atomic="true"></div>
+</body>
+</html>
